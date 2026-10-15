@@ -9,6 +9,7 @@ import { useProjectStore } from '../../state/projectStore';
 import { useUiStore } from '../../state/uiStore';
 import { ConfirmDialog, IconButton, Notice, Section, Slider, Toggle } from '../components/controls';
 import { Icon } from '../components/Icon';
+import { EMBEDDED } from '../../env';
 
 export const SOURCE_LABEL: Record<AudioSource, string> = {
   bass: 'Graves',
@@ -344,7 +345,8 @@ export function SoundLabPanel() {
             className="btn btn-sm"
             aria-pressed={audio.input === 'mic'}
             onClick={() => guard('mic', async () => (audio.input === 'mic' ? audioEngine.stopMic() : audioEngine.startMic()))}
-            disabled={!!busy && busy !== 'mic'}
+            disabled={EMBEDDED || (!!busy && busy !== 'mic')}
+            title={EMBEDDED ? 'El micrófono no está disponible en la vista previa en línea' : undefined}
           >
             <Icon name="mic" /> {audio.input === 'mic' ? 'Detener micrófono' : 'Micrófono'}
           </button>

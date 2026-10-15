@@ -91,8 +91,10 @@ export function Stage() {
     const { image } = useProjectStore.getState().project!.exportSettings;
     try {
       const r = await e.capture({ scale: 1, format: image.format, quality: image.quality });
-      downloadBlob(r.blob, `${safeFileName(projectName)}-${timestamp()}.${image.format === 'jpeg' ? 'jpg' : image.format}`);
-      useUiStore.getState().toast(`Captura guardada (${r.width}×${r.height})`, 'success');
+      const saved = downloadBlob(r.blob, `${safeFileName(projectName)}-${timestamp()}.${image.format === 'jpeg' ? 'jpg' : image.format}`);
+      useUiStore
+        .getState()
+        .toast(saved ? `Captura guardada (${r.width}×${r.height})` : `Captura creada (${r.width}×${r.height}). En la vista previa en línea las descargas están bloqueadas: ábrela en Export para verla.`, saved ? 'success' : 'warning');
     } catch (err) {
       useUiStore.getState().toast(err instanceof Error ? err.message : 'No se pudo capturar', 'error');
     }

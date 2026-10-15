@@ -1,6 +1,9 @@
 import type { Project } from '../../shared/schema';
+import { EMBEDDED } from '../env';
 
-export function downloadBlob(blob: Blob, filename: string) {
+/** Devuelve false si el entorno no permite descargar (vista previa incrustada). */
+export function downloadBlob(blob: Blob, filename: string): boolean {
+  if (EMBEDDED) return false;
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -10,6 +13,7 @@ export function downloadBlob(blob: Blob, filename: string) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  return true;
 }
 
 export function safeFileName(name: string) {
