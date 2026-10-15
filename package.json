@@ -12,7 +12,8 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "check:secrets": "node scripts/check-secrets.mjs"
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "build:embedded": "node scripts/build-embedded.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.134.0",

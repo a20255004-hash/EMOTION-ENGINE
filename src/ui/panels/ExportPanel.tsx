@@ -9,6 +9,7 @@ import { useUiStore } from '../../state/uiStore';
 import { storyPlayer } from '../../story/player';
 import { totalDuration } from '../../story/sequence';
 import { Notice, Section, Segmented, Select, Slider, Toggle } from '../components/controls';
+import { EMBEDDED, EMBEDDED_LIMITS } from '../../env';
 import { Icon } from '../components/Icon';
 
 interface CaptureInfo {
@@ -91,7 +92,7 @@ function ImageExport() {
         Resultado previsto: {Math.round(stage.w * settings.scale)}×{Math.round(stage.h * settings.scale)} px{stats ? '' : ''}.
       </p>
       <button type="button" className="btn btn-primary" onClick={capture} disabled={busy || !engine} data-testid="export-image">
-        {busy ? <span className="spinner" /> : <Icon name="camera" />} Capturar y descargar
+        {busy ? <span className="spinner" /> : <Icon name="camera" />} {EMBEDDED ? 'Capturar' : 'Capturar y descargar'}
       </button>
       {error && <Notice kind="error">{error}</Notice>}
       {result && (
@@ -106,9 +107,11 @@ function ImageExport() {
                 {result.clamped ? ` · reducido desde ${result.requested} por el límite de la GPU` : ''}
               </div>
             </div>
-            <button type="button" className="btn btn-sm" onClick={() => downloadBlob(result.blob, result.name)}>
-              <Icon name="download" /> Descargar
-            </button>
+            {!EMBEDDED && (
+              <button type="button" className="btn btn-sm" onClick={() => downloadBlob(result.blob, result.name)}>
+                <Icon name="download" /> Descargar
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -190,7 +193,7 @@ function VideoExport() {
       const fname = `${safeFileName(name)}-${timestamp()}.${r.ext}`;
       setResult({ ...r, url: URL.createObjectURL(r.blob), name: fname });
       downloadBlob(r.blob, fname);
-      useUiStore.getState().toast(`Grabación lista (${formatBytes(r.blob.size)})`, 'success');
+      useUiStore.getState().toast(`Grabación lista (${formatBytes(r.blob.size)})${EMBEDDED ? ' · reprodúcela abajo' : ''}`, 'success');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error de grabación');
     } finally {
@@ -273,9 +276,11 @@ function VideoExport() {
                 {result.width}×{result.height} · {formatTime(result.durationSec)} · {formatBytes(result.blob.size)} · {result.hasAudio ? 'con pista de audio' : 'sin audio'}
               </div>
             </div>
-            <button type="button" className="btn btn-sm" onClick={() => downloadBlob(result.blob, result.name)}>
-              <Icon name="download" /> Descargar
-            </button>
+            {!EMBEDDED && (
+              <button type="button" className="btn btn-sm" onClick={() => downloadBlob(result.blob, result.name)}>
+                <Icon name="download" /> Descargar
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -298,9 +303,11 @@ function ProjectFileExport() {
           </p>
         </div>
       </div>
+      {EMBEDDED && <p className="hint">No disponible en la vista previa en línea (las descargas están bloqueadas).</p>}
       <button
         type="button"
         className="btn"
+        disabled={EMBEDDED}
         onClick={() => downloadBlob(new Blob([JSON.stringify(projectPackage(project), null, 2)], { type: 'application/json' }), `${safeFileName(project.name)}.emotion.json`)}
         data-testid="export-json"
       >
@@ -320,6 +327,7 @@ export function ExportPanel() {
           <p>Tres tipos de salida distintos: no son equivalentes.</p>
         </div>
       </div>
+      {EMBEDDED && <Notice kind="warn">{EMBEDDED_LIMITS}</Notice>}
       <div className="card">
         <ImageExport />
       </div>
