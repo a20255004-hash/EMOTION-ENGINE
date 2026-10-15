@@ -7,7 +7,7 @@
  * hace aparecer automáticamente en todos esos lugares.
  */
 
-export const WORLD_IDS = ['ocean', 'cosmos', 'atmosphere'] as const;
+export const WORLD_IDS = ['ocean', 'cosmos', 'atmosphere', 'aurora', 'forest', 'neon', 'desert', 'abyss', 'crystal', 'vortex'] as const;
 export type WorldId = (typeof WORLD_IDS)[number];
 
 export const CAMERA_MODES = ['orbit', 'drift', 'flythrough', 'static'] as const;

@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { CAMERA_MODES, PARAM_DEFS, type CameraMode } from '../../shared/params';
+import { useEffect, useRef, useState } from 'react';
+import { CAMERA_MODES, PARAM_DEFS, WORLD_IDS, type CameraMode } from '../../shared/params';
 import { WORLDS } from '../../shared/presets';
 import { Engine, WebGLUnavailableError } from '../engine/Engine';
-import { attachEngine, getEngine } from '../engine/host';
+import { attachEngine } from '../engine/host';
 import { audioEngine } from '../audio/AudioEngine';
-import { downloadBlob, safeFileName, timestamp } from '../export/files';
+import { soundscape } from '../audio/soundscape';
+import { quickCapture, resetView, surprise, toggleAmbience, toggleFullscreen, togglePause } from './actions';
 import { useProjectStore } from '../state/projectStore';
 import { useUiStore } from '../state/uiStore';
 import { storyPlayer } from '../story/player';
@@ -25,7 +26,6 @@ export function Stage() {
   const story = useUiStore((s) => s.story);
   const world = useProjectStore((s) => s.project?.scene.world ?? 'ocean');
   const cameraMode = useProjectStore((s) => s.project?.scene.params.cameraMode ?? 'orbit');
-  const projectName = useProjectStore((s) => s.project?.name ?? 'proyecto');
 
   useEffect(() => {
     const host = hostRef.current;
@@ -69,49 +69,6 @@ export function Stage() {
     return () => document.removeEventListener('fullscreenchange', onFs);
   }, []);
 
-  const togglePause = useCallback(() => {
-    const e = getEngine();
-    if (!e) return;
-    if (useUiStore.getState().story.active) {
-      if (storyPlayer.playing) storyPlayer.pause();
-      else storyPlayer.play();
-      return;
-    }
-    useUiStore.getState().setPaused(e.togglePause());
-  }, []);
-
-  const reset = useCallback(() => {
-    getEngine()?.reset();
-    useUiStore.getState().toast('Animación y cámara reiniciadas', 'info');
-  }, []);
-
-  const capture = useCallback(async () => {
-    const e = getEngine();
-    if (!e) return;
-    const { image } = useProjectStore.getState().project!.exportSettings;
-    try {
-      const r = await e.capture({ scale: 1, format: image.format, quality: image.quality });
-      const saved = downloadBlob(r.blob, `${safeFileName(projectName)}-${timestamp()}.${image.format === 'jpeg' ? 'jpg' : image.format}`);
-      useUiStore
-        .getState()
-        .toast(saved ? `Captura guardada (${r.width}×${r.height})` : `Captura creada (${r.width}×${r.height}). En la vista previa en línea las descargas están bloqueadas: ábrela en Export para verla.`, saved ? 'success' : 'warning');
-    } catch (err) {
-      useUiStore.getState().toast(err instanceof Error ? err.message : 'No se pudo capturar', 'error');
-    }
-  }, [projectName]);
-
-  const toggleFullscreen = useCallback(async () => {
-    const el = stageRef.current;
-    if (!el) return;
-    try {
-      if (document.fullscreenElement) await document.exitFullscreen();
-      else if (el.requestFullscreen) await el.requestFullscreen();
-      else useUiStore.getState().toast('Pantalla completa no disponible en este navegador', 'warning');
-    } catch {
-      useUiStore.getState().toast('El navegador bloqueó la pantalla completa', 'warning');
-    }
-  }, []);
-
   const cycleCamera = () => {
     const i = CAMERA_MODES.indexOf(cameraMode);
     useProjectStore.getState().setParam('cameraMode', CAMERA_MODES[(i + 1) % CAMERA_MODES.length]);
@@ -122,22 +79,38 @@ export function Stage() {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       if (t.closest('input, textarea, select, [contenteditable]')) return;
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          if (e.shiftKey) useProjectStore.getState().redo();
+          else useProjectStore.getState().undo();
+        }
+        return;
+      }
+      const k = e.key.toLowerCase();
       if (e.code === 'Space') {
         e.preventDefault();
         togglePause();
-      } else if (e.key === 'f' || e.key === 'F') void toggleFullscreen();
-      else if (e.key === 'r' || e.key === 'R') reset();
-      else if ((e.key === 'p' || e.key === 'P') && !e.metaKey && !e.ctrlKey) void capture();
-      else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
-        e.preventDefault();
-        if (e.shiftKey) useProjectStore.getState().redo();
-        else useProjectStore.getState().undo();
+      } else if (k === 'f') void toggleFullscreen();
+      else if (k === 'r') resetView();
+      else if (k === 'p') void quickCapture();
+      else if (k === 's') surprise();
+      else if (k === 'm') toggleAmbience();
+      else if (k === 'h' || k === '?') useUiStore.getState().setHelpOpen(true);
+      else if (/^[0-9]$/.test(k)) {
+        // 1–9 y 0: los diez escenarios.
+        const world = WORLD_IDS[k === '0' ? 9 : Number(k) - 1];
+        if (world) {
+          storyPlayer.stop();
+          useProjectStore.getState().setWorld(world);
+        }
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [togglePause, toggleFullscreen, reset, capture]);
+  }, []);
 
+  const ambienceOn = useAmbience();
   const isPlaying = story.active ? story.playing : !paused;
 
   return (
@@ -175,15 +148,25 @@ export function Stage() {
       <div className="hud hud-bottom">
         <div className="glass hud-cluster">
           <IconButton icon={isPlaying ? 'pause' : 'play'} label={isPlaying ? 'Pausar (Espacio)' : 'Reproducir (Espacio)'} onClick={togglePause} testId="btn-pause" />
-          <IconButton icon="reset" label="Reiniciar animación y cámara (R)" onClick={reset} testId="btn-reset" />
-          <IconButton icon="camera" label="Capturar imagen (P)" onClick={capture} testId="btn-capture" />
+          <IconButton icon="reset" label="Reiniciar animación y cámara (R)" onClick={resetView} testId="btn-reset" />
+          <IconButton icon="camera" label="Capturar imagen (P)" onClick={quickCapture} testId="btn-capture" />
+          <IconButton icon="dice" label="Sorpréndeme: escena al azar (S)" onClick={surprise} testId="btn-surprise" />
+          <IconButton icon={ambienceOn ? 'volume' : 'volumeOff'} label={ambienceOn ? 'Silenciar sonido ambiente (M)' : 'Activar sonido ambiente (M)'} onClick={toggleAmbience} pressed={ambienceOn} testId="btn-ambience" />
           <button type="button" className="btn btn-ghost btn-sm" onClick={cycleCamera} title="Cambiar movimiento de cámara" data-testid="btn-camera-mode">
             <Icon name="orbit" /> {CAMERA_LABEL[cameraMode]}
           </button>
           <IconButton icon={hudHidden ? 'eye' : 'eyeOff'} label={hudHidden ? 'Mostrar controles' : 'Ocultar controles al no pasar el cursor'} onClick={() => useUiStore.getState().setHudHidden(!hudHidden)} />
           <IconButton icon={fullscreen ? 'exitFullscreen' : 'fullscreen'} label={fullscreen ? 'Salir de pantalla completa (F)' : 'Pantalla completa (F)'} onClick={toggleFullscreen} testId="btn-fullscreen" />
+          <IconButton icon="help" label="Ayuda y atajos (H)" onClick={() => useUiStore.getState().setHelpOpen(true)} testId="btn-help" />
         </div>
       </div>
     </section>
   );
+}
+
+/** Estado del paisaje sonoro para los botones. */
+export function useAmbience() {
+  const [on, setOn] = useState(soundscape.isPlaying);
+  useEffect(() => soundscape.subscribe(setOn) as unknown as () => void, []);
+  return on;
 }

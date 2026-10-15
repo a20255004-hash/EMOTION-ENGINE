@@ -24,7 +24,7 @@ src/engine/                 ← motor visual (Three.js)
   CameraRig.ts              órbita / deriva / travesía / fija + control manual
   Particles.ts              partículas GPU con densidad por drawRange
   SkyDome.ts, glsl.ts       cielo procedural y ruido simplex/fbm
-  worlds/                   OceanWorld, CosmosWorld, AtmosphereWorld (interfaz World)
+  worlds/                   10 mundos (interfaz World) + common.ts (paleta, envoltura infinita, azar determinista)
   post/FinalPass.ts         aberración, tono, saturación, viñeta, grano, fundidos
   host.ts                   une store ↔ motor y aplica la modulación de audio por fotograma
 
@@ -32,9 +32,13 @@ src/audio/                  ← Web Audio API
   AudioEngine.ts            reproducción, micrófono, analyser, destino de grabación
   analysis.ts               bandas, detector de pulsos, envolvente (puro, testeado)
   modulation.ts             parámetros efectivos = base + Σ vinculaciones (no toca el estado guardado)
+  soundscape.ts             paisajes sonoros generativos por escenario (recetas Web Audio, fundido cruzado)
   demoTrack.ts, tracks.ts   pista sintetizada y gestión de pistas del proyecto
 
-src/nlp/localInterpreter.ts ← reglas → operaciones; devuelve también lo no reconocido
+src/nlp/localInterpreter.ts ← reglas → operaciones + órdenes de app; devuelve también lo no reconocido
+src/nlp/commands.ts         ← órdenes de aplicación (pausa, captura, sonido, navegación…)
+src/nlp/surprise.ts         ← «Sorpréndeme»: combinación aleatoria de operaciones validadas
+src/ui/actions.ts           ← acciones compartidas por botones, atajos y órdenes
 src/story/                  ← secuencias: resolución temporal y transiciones, consistencia, plantillas, reproductor
 src/export/                 ← grabación (MediaRecorder), descargas, paquete de proyecto
 src/storage/                ← ProjectRepository (IndexedDB) + copia de recuperación síncrona

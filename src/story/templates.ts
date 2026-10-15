@@ -61,6 +61,44 @@ export const STORY_TEMPLATES: StoryTemplate[] = [
       { name: 'Silencio estelar', description: 'La energía se disuelve en polvo de estrellas.', world: 'cosmos', duration: 8, transition: 'fade', mood: 'dreamy', ops: [{ op: 'scaleNumber', param: 'speed', factor: 0.5 }] },
     ],
   },
+  {
+    id: 'world-tour',
+    name: 'Gira por los 10 mundos',
+    summary: 'Un recorrido por todos los escenarios, cada uno con su sonido.',
+    scenes: [
+      { name: 'Mar de sueños', description: 'Empezamos sobre un océano en calma.', world: 'ocean', duration: 6, transition: 'fade', mood: 'serene' },
+      { name: 'Hielo y luz', description: 'Cortinas de aurora sobre la llanura helada.', world: 'aurora', duration: 6, transition: 'fade' },
+      { name: 'Bosque que brilla', description: 'Entre árboles antiguos y luciérnagas.', world: 'forest', duration: 6, transition: 'fade', mood: 'dreamy' },
+      { name: 'Cordillera dorada', description: 'Volamos sobre montañas al atardecer.', world: 'atmosphere', duration: 6, transition: 'fade', mood: 'warm' },
+      { name: 'Mar de arena', description: 'Dunas infinitas bajo un sol enorme.', world: 'desert', duration: 6, transition: 'fade' },
+      { name: 'Bajo el agua', description: 'Medusas y rayos de luz en el abismo.', world: 'abyss', duration: 6, transition: 'fade', mood: 'mysterious' },
+      { name: 'Geoda', description: 'Una caverna de cristales que cantan.', world: 'crystal', duration: 6, transition: 'flash' },
+      { name: 'Neón', description: 'La rejilla synthwave corre hacia el horizonte.', world: 'neon', duration: 6, transition: 'flash', mood: 'euphoric' },
+      { name: 'Núcleo cósmico', description: 'Geometría en órbita alrededor de un núcleo vivo.', world: 'cosmos', duration: 6, transition: 'fade', mood: 'epic' },
+      { name: 'Salto cuántico', description: 'Atravesamos el vórtice hacia lo desconocido.', world: 'vortex', duration: 7, transition: 'flash', ops: [{ op: 'scaleNumber', param: 'speed', factor: 1.4 }] },
+    ],
+  },
+  {
+    id: 'deep-dive',
+    name: 'Inmersión profunda',
+    summary: 'Del oleaje nocturno al fondo del mar y una caverna secreta.',
+    scenes: [
+      { name: 'Superficie', description: 'La luna sobre el mar en calma.', world: 'ocean', duration: 7, transition: 'fade', mood: 'serene' },
+      { name: 'Descenso', description: 'Bajamos entre burbujas y haces de luz.', world: 'abyss', duration: 9, transition: 'fade' },
+      { name: 'Jardín de medusas', description: 'Un enjambre de medusas laten al unísono.', world: 'abyss', duration: 8, transition: 'morph', mood: 'dreamy', ops: [{ op: 'scaleNumber', param: 'complexity', factor: 1.6 }] },
+      { name: 'La geoda', description: 'Una grieta revela una caverna de cristal.', world: 'crystal', duration: 9, transition: 'flash', mood: 'mysterious' },
+    ],
+  },
+  {
+    id: 'synth-night',
+    name: 'Noche synthwave',
+    summary: 'Para música electrónica: neón, velocidad y un salto al hiperespacio.',
+    scenes: [
+      { name: 'Autopista de neón', description: 'La rejilla avanza al ritmo de los graves.', world: 'neon', duration: 10, transition: 'fade', ops: [{ op: 'bindAudio', source: 'bass', target: 'waveAmplitude', amount: 0.3 }, { op: 'bindAudio', source: 'beat', target: 'intensity', amount: 0.35 }] },
+      { name: 'Aceleración', description: 'Todo se vuelve más rápido y brillante.', world: 'neon', duration: 8, transition: 'morph', mood: 'euphoric', ops: [{ op: 'scaleNumber', param: 'speed', factor: 1.6 }] },
+      { name: 'Hiperespacio', description: 'El túnel cuántico se abre.', world: 'vortex', duration: 10, transition: 'flash', ops: [{ op: 'bindAudio', source: 'beat', target: 'speed', amount: 0.25 }] },
+    ],
+  },
 ];
 
 function toScene(t: TemplateScene): StoryScene {

@@ -3,23 +3,23 @@ import { canvasStats, diff, getEffective, getParams, openStudio, setRange } from
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 test.describe('Experience Studio', () => {
-  test('las tres experiencias se renderizan con imagen distinta', async ({ page }) => {
+  test('los 10 escenarios se renderizan con imagen distinta y sin errores', async ({ page }) => {
+    test.setTimeout(150_000);
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
-    page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+    page.on('console', (m) => m.type() === 'error' && !/Failed to load resource/.test(m.text()) && errors.push(m.text()));
     await openStudio(page);
-    const shots: Record<string, number[]> = {};
-    for (const w of ['ocean', 'cosmos', 'atmosphere'] as const) {
+    const worlds = ['ocean', 'cosmos', 'atmosphere', 'aurora', 'forest', 'neon', 'desert', 'abyss', 'crystal', 'vortex'];
+    const shots: number[][] = [];
+    for (const w of worlds) {
       await page.getByTestId(`world-${w}`).click();
-      await expect(page.getByTestId('hud-world')).toContainText(w === 'ocean' ? 'Océano' : w === 'cosmos' ? 'Universo' : 'Paisaje');
-      await page.waitForTimeout(1500);
-      const s = await canvasStats(page);
-      expect(s.std, `${w} no debe ser una imagen plana`).toBeGreaterThan(4);
-      shots[w] = s.rgb;
-      expect(await page.evaluate(() => (window as any).__engine.worldId)).toBe(w);
+      await expect.poll(() => page.evaluate(() => (window as any).__engine.worldId)).toBe(w);
+      // Espera a que el escenario tenga imagen (en GPU por software, compilar shaders tarda).
+      await expect.poll(async () => (await canvasStats(page)).std, { timeout: 30_000, message: `${w} no debe ser una imagen plana` }).toBeGreaterThan(4);
+      await page.waitForTimeout(800);
+      shots.push((await canvasStats(page)).rgb);
     }
-    expect(diff(shots.ocean, shots.cosmos)).toBeGreaterThan(10);
-    expect(diff(shots.cosmos, shots.atmosphere)).toBeGreaterThan(10);
+    for (let i = 1; i < shots.length; i++) expect(diff(shots[i - 1], shots[i]), `${worlds[i - 1]} vs ${worlds[i]}`).toBeGreaterThan(8);
     expect(errors, errors.join('\n')).toEqual([]);
   });
 

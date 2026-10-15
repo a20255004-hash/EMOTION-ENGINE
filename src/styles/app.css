@@ -983,7 +983,7 @@ textarea {
 /* World cards */
 .world-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 .world-card {
@@ -991,8 +991,9 @@ textarea {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  height: 92px;
-  padding: 9px;
+  gap: 2px;
+  min-height: 92px;
+  padding: 9px 10px;
   border-radius: 11px;
   border: 1px solid var(--line-strong);
   overflow: hidden;
@@ -1010,21 +1011,222 @@ textarea {
   box-shadow: 0 0 0 1px var(--accent), 0 8px 24px rgba(124, 240, 255, 0.15);
 }
 .world-card .name {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 650;
   line-height: 1.2;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
   position: relative;
+}
+.world-card .tag {
+  position: relative;
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.78);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .world-card::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 30%, rgba(0, 0, 0, 0.65));
+  z-index: 1;
+  background: linear-gradient(180deg, transparent 20%, rgba(0, 0, 0, 0.72));
+  pointer-events: none;
+}
+.world-card .name,
+.world-card .tag,
+.world-key {
+  z-index: 2;
 }
 .world-card .art {
   position: absolute;
   inset: 0;
+  transition: transform 0.4s ease;
+}
+.world-card:hover .art {
+  transform: scale(1.06);
+}
+.world-key {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  min-width: 18px;
+  text-align: center;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.85);
+}
+.world-grid.compact {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+.world-grid.compact .world-card {
+  min-height: 46px;
+  padding: 5px;
+}
+.world-grid.compact .tag,
+.world-grid.compact .world-key {
+  display: none;
+}
+.world-grid.compact .name {
+  font-size: 9.5px;
+}
+.sound-note {
+  color: var(--accent);
+}
+.palette-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.palette-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px 4px 4px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.palette-chip span {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+.palette-chip:hover {
+  color: var(--text);
+  border-color: rgba(124, 240, 255, 0.45);
+}
+.ambience-card {
+  background: var(--panel-2);
+  border-color: rgba(124, 240, 255, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-elev);
+  color: var(--text);
+}
+.chip.static {
+  cursor: default;
+}
+.dialog.dialog-wide {
+  width: min(860px, 100%);
+  max-height: min(86vh, 760px);
+  overflow-y: auto;
+}
+.help-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 24px;
+  margin-top: 8px;
+}
+.help-grid h3 {
+  font-size: 13px;
+  margin: 0 0 8px;
+}
+.help-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.kv.shortcuts {
+  display: flex;
+  flex-direction: column;
+}
+.kv-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--line);
+}
+.shortcuts .kv-row dt {
+  min-width: 92px;
+}
+.shortcuts .kv-row dd {
+  text-align: left;
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.welcome-backdrop {
+  background: radial-gradient(900px 500px at 50% 0%, rgba(124, 240, 255, 0.12), transparent 60%), rgba(3, 4, 8, 0.82);
+}
+.dialog.welcome {
+  width: min(580px, 100%);
+  padding: 0 22px 20px;
+  overflow: hidden;
+}
+.welcome h2 {
+  font-size: 22px;
+  margin-top: 18px;
+  text-wrap: balance;
+}
+.welcome-strip {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  height: 72px;
+  margin: 0 -22px;
+}
+.welcome-strip span {
+  animation: strip-in 0.6s ease both;
+}
+.welcome-strip span:nth-child(2n) {
+  animation-delay: 0.08s;
+}
+.welcome-strip span:nth-child(3n) {
+  animation-delay: 0.16s;
+}
+.welcome-steps {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.welcome-steps strong {
+  color: var(--text);
+}
+@keyframes strip-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+@media (max-width: 700px) {
+  .help-grid {
+    grid-template-columns: 1fr;
+  }
+  .welcome .dialog-actions {
+    flex-direction: column-reverse;
+  }
+  .welcome .dialog-actions .btn {
+    width: 100%;
+  }
 }
 
 /* Prompt bar */
@@ -1672,7 +1874,7 @@ textarea {
     display: none;
   }
   .world-card {
-    height: 78px;
+    min-height: 84px;
   }
   .meters {
     grid-template-columns: repeat(3, 1fr);

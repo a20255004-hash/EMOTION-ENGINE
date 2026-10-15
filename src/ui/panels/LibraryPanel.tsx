@@ -67,9 +67,9 @@ export function LibraryPanel() {
       <div className="card stack">
         <h3 style={{ margin: 0 }}>Nuevo proyecto</h3>
         <input className="input" placeholder="Nombre del proyecto" value={newName} maxLength={120} onChange={(e) => setNewName(e.target.value)} data-testid="new-project-name" aria-label="Nombre del nuevo proyecto" />
-        <div className="world-grid">
+        <div className="world-grid compact" role="group" aria-label="Escenario inicial">
           {WORLD_IDS.map((w) => (
-            <button key={w} type="button" className="world-card" style={{ height: 64 }} aria-pressed={newWorld === w} onClick={() => setNewWorld(w)}>
+            <button key={w} type="button" className="world-card" aria-pressed={newWorld === w} onClick={() => setNewWorld(w)} title={WORLDS[w].name}>
               <span className="art" style={{ background: worldArt(w) }} />
               <span className="name">{WORLDS[w].name}</span>
             </button>

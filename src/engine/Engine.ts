@@ -11,6 +11,13 @@ import type { World } from './types';
 import { OceanWorld } from './worlds/OceanWorld';
 import { CosmosWorld } from './worlds/CosmosWorld';
 import { AtmosphereWorld } from './worlds/AtmosphereWorld';
+import { AuroraWorld } from './worlds/AuroraWorld';
+import { ForestWorld } from './worlds/ForestWorld';
+import { NeonWorld } from './worlds/NeonWorld';
+import { DesertWorld } from './worlds/DesertWorld';
+import { AbyssWorld } from './worlds/AbyssWorld';
+import { CrystalWorld } from './worlds/CrystalWorld';
+import { VortexWorld } from './worlds/VortexWorld';
 
 export interface EngineStats {
   fps: number;
@@ -44,6 +51,13 @@ const WORLD_FACTORY: Record<WorldId, () => World> = {
   ocean: () => new OceanWorld(),
   cosmos: () => new CosmosWorld(),
   atmosphere: () => new AtmosphereWorld(),
+  aurora: () => new AuroraWorld(),
+  forest: () => new ForestWorld(),
+  neon: () => new NeonWorld(),
+  desert: () => new DesertWorld(),
+  abyss: () => new AbyssWorld(),
+  crystal: () => new CrystalWorld(),
+  vortex: () => new VortexWorld(),
 };
 
 export class WebGLUnavailableError extends Error {}
@@ -133,6 +147,24 @@ export class Engine {
     this.resize();
     this.timer.connect(document);
     this.loop();
+    this.prewarmTimer = setTimeout(() => this.prewarm(), 2500);
+  }
+
+  private prewarmTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /**
+   * Prepara en segundo plano los escenarios aún no visitados y compila sus
+   * shaders, uno cada poco tiempo, para que el primer cambio sea inmediato.
+   */
+  private prewarm() {
+    if (this.disposed) return;
+    const pending = (Object.keys(WORLD_FACTORY) as WorldId[]).find((id) => !this.worlds.has(id));
+    if (!pending) return;
+    const w = this.getWorld(pending);
+    const next = () => {
+      if (!this.disposed) this.prewarmTimer = setTimeout(() => this.prewarm(), 700);
+    };
+    this.renderer.compileAsync(w.scene, this.camera).then(next, next);
   }
 
   private getWorld(id: WorldId): World {
@@ -363,6 +395,7 @@ export class Engine {
 
   dispose() {
     this.disposed = true;
+    clearTimeout(this.prewarmTimer);
     cancelAnimationFrame(this.raf);
     this.resizeObserver.disconnect();
     this.rig.dispose();

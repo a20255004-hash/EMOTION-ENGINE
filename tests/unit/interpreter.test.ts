@@ -78,3 +78,69 @@ describe('intérprete local', () => {
     }
   });
 });
+
+describe('intérprete: escenarios, paletas y órdenes', () => {
+  it('cambia a cualquiera de los 10 escenarios', () => {
+    const cases: [string, string][] = [
+      ['llévame al bosque', 'forest'],
+      ['aurora boreal', 'aurora'],
+      ['cambia a la ciudad neón', 'neon'],
+      ['muestra el desierto', 'desert'],
+      ['quiero el fondo del mar', 'abyss'],
+      ['ve a la caverna de cristal', 'crystal'],
+      ['vórtice', 'vortex'],
+    ];
+    for (const [text, world] of cases) expect(run(text).r.state.world, text).toBe(world);
+  });
+
+  it('aplica paletas con nombre', () => {
+    expect(run('paleta vaporwave').r.state.params.primaryColor).toBe('#ff71ce');
+    expect(run('colores de fuego').r.state.params.primaryColor).toBe('#ff4b1f');
+  });
+
+  it('nuevas atmósferas', () => {
+    const i = interpretLocally('una escena psicodélica', 'ocean');
+    expect(i.operations.some((o) => o.op === 'applyMood' && o.mood === 'psychedelic')).toBe(true);
+  });
+
+  it('reconoce órdenes de aplicación sin tocar la escena', () => {
+    const kinds = (t: string) => interpretLocally(t, 'ocean').commands.map((c) => c.kind);
+    expect(kinds('pausa')).toEqual(['pause']);
+    expect(kinds('reanuda')).toEqual(['play']);
+    expect(kinds('haz una captura')).toEqual(['capture']);
+    expect(kinds('pantalla completa')).toEqual(['fullscreen']);
+    expect(kinds('sorpréndeme')).toEqual(['surprise']);
+    expect(kinds('activa el sonido ambiente')).toEqual(['ambience']);
+    expect(kinds('pon música')).toEqual(['demoTrack']);
+    expect(kinds('reproduce la historia')).toEqual(['storyPlay']);
+    expect(kinds('abre sound lab')).toEqual(['open']);
+    expect(kinds('pausa y haz una captura')).toEqual(['pause', 'capture']);
+    expect(interpretLocally('pausa', 'ocean').operations).toEqual([]);
+  });
+
+  it('las frases de reacción al audio no se confunden con órdenes de sonido', () => {
+    const i = interpretLocally('quita las reacciones al audio', 'ocean');
+    expect(i.commands).toEqual([]);
+    expect(i.operations[0]).toMatchObject({ op: 'unbindAudio' });
+    const j = interpretLocally('que la luz reaccione con el audio', 'ocean');
+    expect(j.commands).toEqual([]);
+    expect(j.operations.some((o) => o.op === 'bindAudio')).toBe(true);
+  });
+});
+
+describe('sorpréndeme', () => {
+  it('genera operaciones válidas que cambian de escenario', async () => {
+    const { surpriseOps } = await import('../../src/nlp/surprise');
+    for (let k = 0; k < 30; k++) {
+      const { ops, summary } = surpriseOps('ocean');
+      const r = applyOperations(state(), ops);
+      expect(r.rejected).toEqual([]);
+      expect(r.state.world).not.toBe('ocean');
+      expect(summary.length).toBeGreaterThan(5);
+    }
+  });
+});
+
+it('no confunde palabras que contienen nombres de escenarios', () => {
+  expect(interpretLocally('algo maravilloso', 'cosmos').operations.some((o) => o.op === 'setWorld')).toBe(false);
+});
