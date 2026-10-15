@@ -5,6 +5,7 @@
  */
 import { modulate } from '../audio/modulation';
 import { audioEngine } from '../audio/AudioEngine';
+import { soundscape } from '../audio/soundscape';
 import { useProjectStore } from '../state/projectStore';
 import type { AudioBinding } from '../../shared/schema';
 import type { Engine } from './Engine';
@@ -40,6 +41,14 @@ export function attachEngine(e: Engine): () => void {
   };
   sync();
   const unsub = useProjectStore.subscribe((s) => s.project?.scene, sync);
+  // El paisaje sonoro sigue al escenario visible (también durante una secuencia).
+  let lastFollow = 0;
+  const unhookSound = e.addFrameHook(() => {
+    const now = performance.now();
+    if (now - lastFollow < 250) return;
+    lastFollow = now;
+    soundscape.follow(e.worldId, e.currentParams);
+  });
   e.setModulator((base) => {
     const p = useProjectStore.getState().project;
     if (!p) return base;
@@ -49,6 +58,7 @@ export function attachEngine(e: Engine): () => void {
   });
   return () => {
     unsub();
+    unhookSound();
     if (engine === e) engine = null;
   };
 }

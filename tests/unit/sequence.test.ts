@@ -68,3 +68,17 @@ describe('generación de escenas', () => {
     expect(scenes[0].params.speed).toBe(2);
   });
 });
+
+describe('escenarios', () => {
+  it('cada uno de los 10 escenarios tiene preset válido, nombre y sonido', async () => {
+    const { WORLD_IDS } = await import('../../shared/params');
+    const { WORLDS } = await import('../../shared/presets');
+    const { VisualParamsSchema } = await import('../../shared/schema');
+    expect(WORLD_IDS.length).toBeGreaterThanOrEqual(10);
+    for (const w of WORLD_IDS) {
+      expect(WORLDS[w].name.length).toBeGreaterThan(3);
+      const p = worldPreset(w);
+      expect(VisualParamsSchema.parse(p)).toEqual(p);
+    }
+  });
+});

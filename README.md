@@ -26,12 +26,17 @@ La API es opcional: si no está en ejecución, el editor funciona entero en modo
 
 | Módulo | Funciones |
 |---|---|
-| **Experience Studio** | Tres mundos completos con identidad propia: *Océano onírico* (oleaje en GPU, Fresnel, bioluminiscencia, orbes y anillo-portal), *Universo abstracto* (núcleo deformado por ruido, anillos de poliedros instanciados, galaxia espiral, nebulosa) y *Paisaje atmosférico* (relieve fractal infinito, cielo con sol, niebla de valle y bancos de niebla, polvo, aves). 31 parámetros editables en tiempo real (movimiento, forma, luz, paleta, partículas, atmósfera/profundidad, cámara, intensidad visual). Pausa, reinicio, captura, pantalla completa, 4 modos de cámara + control manual, atajos de teclado, deshacer/rehacer, calidad adaptativa. |
-| **Editor por lenguaje natural** | Intérprete local por reglas (sin red) que convierte instrucciones en operaciones validadas, muestra los cambios exactos (antes → después), avisa de lo que no entiende y permite deshacer. Capa opcional de IA: el modelo solo puede devolver operaciones del mismo esquema, que se validan en el servidor y otra vez en el cliente. |
+| **Experience Studio** | **10 escenarios** con identidad, comportamiento y sonido propios: *Océano onírico*, *Universo abstracto*, *Paisaje atmosférico*, *Aurora boreal* (cortinas de luz polar sobre hielo), *Bosque bioluminiscente* (coníferas, hongos que laten, luciérnagas), *Ciudad neón* (rejilla synthwave, sol retro, rascacielos), *Dunas del desierto* (dunas infinitas, columnas de roca, arena al viento), *Abismo submarino* (cáusticas, algas, medusas, burbujas), *Caverna de cristal* (geodas facetadas, vetas luminosas) y *Vórtice cuántico* (túnel infinito de energía). 31 parámetros en tiempo real, 10 paletas con nombre, 14 atmósferas, «Sorpréndeme», 4 modos de cámara + control manual, pausa, reinicio, captura, pantalla completa, deshacer/rehacer y calidad adaptativa. |
+| **Sonido ambiente** | Cada escenario tiene un paisaje sonoro generativo sintetizado en tiempo real (olas y campanas, viento polar y coro, grillos y búho, synthwave a tempo, ballenas y sonar, campanas de cristal con eco…). Se adapta a la velocidad y la turbulencia, sigue a la secuencia, se mezcla con tu música, mueve las vinculaciones y se graba. |
+| **Editor por lenguaje natural** | Intérprete local por reglas (sin red) que convierte instrucciones en operaciones validadas y también ejecuta **órdenes de la app** («sorpréndeme», «pausa», «haz una captura», «pantalla completa», «activa el sonido», «pon música», «reproduce la historia», «abre sound lab», «guarda una versión»…), muestra los cambios exactos (antes → después), avisa de lo que no entiende y permite deshacer. Capa opcional de IA: el modelo solo puede devolver operaciones del mismo esquema, que se validan en el servidor y otra vez en el cliente. |
 | **Sound Lab** | Importación de audio (MP3/WAV/OGG/FLAC/M4A/WebM), pista de demostración sintetizada en el navegador, micrófono, transporte, espectro y medidores en vivo, estimación de tempo, sensibilidad/suavizado/intensidad/ataque/liberación, vinculaciones banda → parámetro activables individual o globalmente. Adaptador opcional de generación musical en el servidor (límites, cupo, tiempos de espera, coste estimado). |
 | **Story Worlds** | Escenas con nombre, descripción, duración, mundo, parámetros, audio y transición (corte, fundido, morph, destello). Añadir, duplicar, eliminar y reordenar (arrastrar o botones). Línea de tiempo con reproducción, búsqueda y bucle. Generación local desde una idea y plantillas; opción IA. Consistencia entre escenas por grupos. |
 | **Export Studio** | Captura re-renderizada hasta 4× (PNG/JPEG/WebP, límite real de la GPU), grabación de la experiencia en tiempo real con audio (MP4 o WebM según el navegador; escena en vivo o secuencia completa; resolución, fps y bitrate), progreso y vista previa del archivo. Exportación del proyecto en JSON. El vídeo por IA aparece separado y marcado como no disponible. |
 | **Biblioteca** | Crear, nombrar, abrir, duplicar, eliminar (con confirmación), importar JSON. Autoguardado con estado visible, copia de recuperación ante recargas/cierres, versiones manuales y automáticas con restauración. |
+
+## Atajos de teclado
+
+`1`–`9`, `0` escenarios · `S` sorpréndeme · `M` sonido ambiente · `Espacio` pausa · `R` reiniciar · `P` captura · `F` pantalla completa · `H` ayuda · `Ctrl/⌘ Z` deshacer.
 
 ## Configurar integraciones opcionales
 
@@ -64,7 +69,7 @@ Con el proveedor Anthropic se usa el SDK oficial con salida estructurada (esquem
 
 ```bash
 npm run typecheck      # TypeScript estricto (cliente, servidor y pruebas)
-npm test               # 46 pruebas unitarias: operaciones, intérprete, análisis de audio, modulación, secuencias, almacenamiento, contrato IA, servidor
+npm test               # 54 pruebas unitarias: operaciones, intérprete y órdenes, sorpresa, análisis de audio, modulación, secuencias, escenarios, almacenamiento, contrato IA, servidor
 npm run test:e2e       # Playwright sobre la build de producción + API
 npm run build && npm run check:secrets   # sin claves en el cliente ni en respuestas/errores/registros
 ```

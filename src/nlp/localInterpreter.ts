@@ -8,11 +8,14 @@
  */
 import type { Operation } from '../../shared/operations';
 import { PARAM_DEFS, type NumericParamId, type ColorParamId, type CameraMode, type WorldId } from '../../shared/params';
-import { MOODS, MOOD_IDS, WORLDS, worldPreset, type MoodId } from '../../shared/presets';
+import { MOODS, MOOD_IDS, PALETTES, WORLDS, worldPreset, type MoodId } from '../../shared/presets';
+import { detectCommands, type AppCommand } from './commands';
 import type { AudioSource } from '../../shared/schema';
 
 export interface Interpretation {
   operations: Operation[];
+  /** Órdenes para la aplicación (pausa, captura, sonido…), no cambian la escena. */
+  commands: AppCommand[];
   notes: string[];
   unmatched: string[];
 }
@@ -22,7 +25,10 @@ export const LOCAL_CAPABILITIES = [
   'Valores concretos: «velocidad a 2», «partículas al 80 %», «niebla al 10%».',
   'Colores por nombre: «partículas doradas», «luz roja», «cielo violeta», «acentos turquesa», «paleta fría».',
   'Atmósferas: serena, misteriosa, épica, melancólica, eufórica, onírica, amenazante, cálida, fría.',
-  'Cámara: órbita, deriva, travesía, fija. Mundos: «cambia al océano / universo / paisaje».',
+  'Cámara: órbita, deriva, travesía, fija. 10 escenarios: «llévame al bosque», «aurora boreal», «modo neón», «vórtice»…',
+  'Paletas: atardecer, neón, pastel, monocromo, fuego, hielo, selva, océano, oro, vaporwave («paleta pastel»).',
+  'Más atmósferas: romántica, futurista, psicodélica, minimalista, caótica.',
+  'Órdenes: «sorpréndeme», «pausa», «reanuda», «haz una captura», «pantalla completa», «activa / apaga el sonido», «sube el volumen», «pon música», «reproduce la historia», «abre sound lab», «guarda una versión», «deshaz».',
   'Audio: «que las formas reaccionen a los graves», «la luz al ritmo», «quita las reacciones al audio».',
 ];
 
@@ -196,6 +202,25 @@ function splitClauses(text: string): string[] {
     .filter((c) => c.length > 1);
 }
 
+/** Escenario cuya palabra clave coincide de forma más específica (la más larga). */
+const escapeRe = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// Las claves cortas («mar», «sol») exigen la palabra completa; las largas valen como prefijo.
+const startsWord = (t: string, k: string) => {
+  const kk = k.trim();
+  return new RegExp(`(^|[^a-z0-9])${escapeRe(kk)}${kk.length <= 4 ? '($|[^a-z0-9])' : ''}`).test(t);
+};
+
+function matchWorld(t: string) {
+  let best: { w: (typeof WORLDS)[WorldId]; len: number } | null = null;
+  for (const w of Object.values(WORLDS) as (typeof WORLDS)[WorldId][]) {
+    for (const k of w.keywords) {
+      const kk = strip(k);
+      if (startsWord(t, kk) && (!best || kk.length > best.len)) best = { w, len: kk.length };
+    }
+  }
+  return best?.w;
+}
+
 function interpretClause(clause: string, world: WorldId): { ops: Operation[]; notes: string[] } | null {
   const t = ` ${clause} `;
   const ops: Operation[] = [];
@@ -242,9 +267,16 @@ function interpretClause(clause: string, world: WorldId): { ops: Operation[]; no
     return { ops, notes };
   }
 
+  // 2b) Paletas con nombre
+  const palette = PALETTES.find((pl) => pl.keywords.some((k) => t.includes(strip(k))) || t.includes(`paleta ${strip(pl.label)}`));
+  if (palette) {
+    for (const [k, v] of Object.entries(palette.colors)) ops.push({ op: 'setColor', param: k as ColorParamId, value: v });
+    notes.push(`Paleta «${palette.label}».`);
+  }
+
   // 3) Cambio de mundo (requiere verbo de cambio)
   if (has(t, WORLD_VERBS)) {
-    const target = (Object.values(WORLDS) as (typeof WORLDS)[WorldId][]).find((w) => w.keywords.some((k) => t.includes(strip(k))));
+    const target = matchWorld(t);
     if (target) {
       ops.push({ op: 'setWorld', world: target.id });
       notes.push(`Cambio al mundo «${target.name}».`);
@@ -261,7 +293,8 @@ function interpretClause(clause: string, world: WorldId): { ops: Operation[]; no
   }
 
   // 6) Estados de ánimo / atmósferas
-  const moods = MOOD_IDS.filter((m) => MOODS[m].keywords.some((k) => t.includes(strip(k))));
+  // Coincidencia al inicio de palabra: «ice» no debe activarse dentro de «vórtice».
+  const moods = MOOD_IDS.filter((m) => MOODS[m].keywords.some((k) => startsWord(t, strip(k))));
   // "oscuro" solo es mood si no hay un parámetro explícito.
   for (const mood of moods) {
     const neg = direction(t) === -1 && has(t, ['menos']);
@@ -346,16 +379,36 @@ function interpretClause(clause: string, world: WorldId): { ops: Operation[]; no
     notes.push('Giro de tono global.');
   }
 
+  // Si solo se nombra un escenario («aurora boreal», «el bosque»), se cambia a él.
+  if (!ops.length) {
+    const words = t.trim().split(' ').length;
+    const target = matchWorld(t);
+    if (target && words <= 5 && target.id !== world && !findParam(t) && !colorMatch) {
+      ops.push({ op: 'setWorld', world: target.id });
+      notes.push(`Cambio al mundo «${target.name}».`);
+    }
+  }
+
   return ops.length ? { ops, notes } : null;
 }
 
 export function interpretLocally(instruction: string, world: WorldId): Interpretation {
   const text = strip(instruction).replace(/[¡!¿?"«»]/g, ' ').replace(/\s+/g, ' ').trim();
   const operations: Operation[] = [];
+  const commands: AppCommand[] = [];
   const notes: string[] = [];
   const unmatched: string[] = [];
   let currentWorld = world;
   for (const clause of splitClauses(text)) {
+    // Las órdenes de aplicación tienen prioridad, salvo frases de reacción al audio.
+    if (!has(` ${clause} `, AUDIO_TRIGGERS)) {
+      const cmd = detectCommands(clause);
+      if (cmd.commands.length) {
+        commands.push(...cmd.commands);
+        notes.push(...cmd.labels.map((l) => `${l}.`));
+        continue;
+      }
+    }
     const r = interpretClause(clause, currentWorld);
     if (r) {
       operations.push(...r.ops);
@@ -366,5 +419,5 @@ export function interpretLocally(instruction: string, world: WorldId): Interpret
       unmatched.push(clause);
     }
   }
-  return { operations, notes, unmatched };
+  return { operations, commands, notes, unmatched };
 }

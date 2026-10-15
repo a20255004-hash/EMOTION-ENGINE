@@ -10,6 +10,10 @@ import { useUiStore } from '../../state/uiStore';
 import { ConfirmDialog, IconButton, Notice, Section, Slider, Toggle } from '../components/controls';
 import { Icon } from '../components/Icon';
 import { EMBEDDED } from '../../env';
+import { SOUNDSCAPE_INFO } from '../../audio/soundscape';
+import { WORLDS } from '../../../shared/presets';
+import { useAmbience } from '../Stage';
+import { setAmbience } from '../actions';
 
 export const SOURCE_LABEL: Record<AudioSource, string> = {
   bass: 'Graves',
@@ -255,6 +259,29 @@ function MusicGenerator() {
   );
 }
 
+function AmbienceCard() {
+  const on = useAmbience();
+  const world = useProjectStore((s) => s.project?.scene.world ?? 'ocean');
+  const volume = useProjectStore((s) => s.project?.audio.settings.ambienceVolume ?? 0.6);
+  return (
+    <div className="card ambience-card" data-testid="ambience-card">
+      <div className="row">
+        <div className="grow">
+          <h3 style={{ margin: 0 }}>Sonido ambiente</h3>
+          <p className="hint" style={{ margin: '2px 0 0' }}>
+            {WORLDS[world].name}: {SOUNDSCAPE_INFO[world].toLowerCase()}.
+          </p>
+        </div>
+        <button type="button" className={`btn btn-sm ${on ? '' : 'btn-primary'}`} onClick={() => setAmbience(!on)} aria-pressed={on} data-testid="ambience-toggle">
+          <Icon name={on ? 'volumeOff' : 'volume'} /> {on ? 'Silenciar' : 'Activar'}
+        </button>
+      </div>
+      <Slider label="Volumen del ambiente" value={volume} min={0} max={1} step={0.01} onChange={(v) => useProjectStore.getState().updateAudioSettings({ ambienceVolume: v }, 'audio:amb')} />
+      <p className="hint">Cada escenario tiene su propio paisaje sonoro, generado en tiempo real y adaptado a la velocidad y la turbulencia. Se mezcla con tu música, mueve las vinculaciones y se incluye en las grabaciones.</p>
+    </div>
+  );
+}
+
 export function SoundLabPanel() {
   const project = useProjectStore((s) => s.project);
   const audio = useAudioState();
@@ -318,6 +345,8 @@ export function SoundLabPanel() {
           <p>Reproduce audio, analízalo y vincúlalo a la escena.</p>
         </div>
       </div>
+
+      <AmbienceCard />
 
       <div className="card">
         <h3>Fuentes</h3>

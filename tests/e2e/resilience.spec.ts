@@ -45,6 +45,7 @@ test.describe('Estados de error', () => {
 
   test('sin WebGL se muestra un mensaje comprensible en lugar de una pantalla rota', async ({ page }) => {
     await page.addInitScript(() => {
+      localStorage.setItem('emotion-engine:welcomed-v2', '1');
       const orig = HTMLCanvasElement.prototype.getContext;
       HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, type: string, ...rest: unknown[]) {
         if (type.startsWith('webgl')) return null;
