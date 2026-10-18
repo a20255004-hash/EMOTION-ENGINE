@@ -27,6 +27,8 @@ interface UiState {
   capabilities: Capabilities | null;
   hudHidden: boolean;
   recording: boolean;
+  helpOpen: boolean;
+  setHelpOpen(v: boolean): void;
   setMode(mode: Mode): void;
   setPaused(p: boolean): void;
   setStats(s: EngineStats): void;
@@ -51,6 +53,8 @@ export const useUiStore = create<UiState>()((set, get) => ({
   capabilities: null,
   hudHidden: false,
   recording: false,
+  helpOpen: false,
+  setHelpOpen: (helpOpen) => set({ helpOpen }),
   setMode: (mode) => set({ mode }),
   setPaused: (paused) => set({ paused }),
   setStats: (stats) => set({ stats }),

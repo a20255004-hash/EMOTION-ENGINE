@@ -225,7 +225,16 @@ class AudioEngineImpl {
   }
 
   get active() {
-    return !!this.analyser && (!!this.source || !!this.micSource);
+    return !!this.analyser && (!!this.source || !!this.micSource || this.ambienceOn);
+  }
+
+  /** El paisaje sonoro avisa cuando suena para que el análisis lo incluya. */
+  ambienceOn = false;
+
+  /** Entrada del paisaje sonoro: pasa por el analizador, así también mueve la escena y se graba. */
+  ambienceInput(): AudioNode {
+    this.ensure();
+    return this.analyser!;
   }
 
   /** Última señal procesada (la produce el ciclo de análisis). */

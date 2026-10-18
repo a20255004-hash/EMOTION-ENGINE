@@ -78,6 +78,9 @@ export const AudioSettingsSchema = z.object({
   bindingsEnabled: z.boolean().default(true),
   volume: z.number().min(0).max(1).default(0.8),
   loop: z.boolean().default(true),
+  /** Paisaje sonoro generativo de cada escenario. */
+  ambienceEnabled: z.boolean().default(true),
+  ambienceVolume: z.number().min(0).max(1).default(0.6),
 });
 export type AudioSettings = z.infer<typeof AudioSettingsSchema>;
 

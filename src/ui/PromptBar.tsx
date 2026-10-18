@@ -2,17 +2,19 @@ import { useState } from 'react';
 import type { AppliedChange } from '../../shared/operations';
 import { ApiError, interpretWithAi } from '../integrations/apiClient';
 import { LOCAL_CAPABILITIES, interpretLocally } from '../nlp/localInterpreter';
+import { runCommand } from './actions';
 import { useProjectStore } from '../state/projectStore';
 import { useUiStore } from '../state/uiStore';
 import { Icon } from './components/Icon';
 
-const EXAMPLES = ['Haz el movimiento más lento', 'Añade partículas doradas', 'Crea una atmósfera más misteriosa', 'Haz que las formas reaccionen a los graves', 'Cámara en travesía y mucha niebla', 'Luz roja y olas más altas'];
+const EXAMPLES = ['Haz el movimiento más lento', 'Añade partículas doradas', 'Llévame al bosque', 'Sorpréndeme', 'Paleta vaporwave', 'Activa el sonido ambiente', 'Crea una atmósfera más misteriosa', 'Haz que las formas reaccionen a los graves'];
 
 interface Result {
   source: 'local' | 'ai';
   provider?: string;
   instruction: string;
   notes: string[];
+  commands: number;
   changes: AppliedChange[];
   unmatched: string[];
   rejected: number;
@@ -34,7 +36,9 @@ export function PromptBar() {
     const world = useProjectStore.getState().project!.scene.world;
     const interp = interpretLocally(instruction, world);
     const r = interp.operations.length ? applyOps(interp.operations) : null;
-    setResult({ source: 'local', instruction, notes: interp.notes, changes: r?.changes ?? [], unmatched: interp.unmatched, rejected: r?.rejected.length ?? 0 });
+    // Las órdenes (pausa, captura, sonido…) se ejecutan después de aplicar los cambios de escena.
+    for (const cmd of interp.commands) void runCommand(cmd);
+    setResult({ source: 'local', instruction, notes: interp.notes, commands: interp.commands.length, changes: r?.changes ?? [], unmatched: interp.unmatched, rejected: r?.rejected.length ?? 0 });
   };
 
   const runAi = async (instruction: string) => {
@@ -42,9 +46,9 @@ export function PromptBar() {
     try {
       const plan = await interpretWithAi(instruction, { world: p.scene.world, params: p.scene.params, bindings: p.audio.bindings });
       const r = applyOps(plan.operations);
-      setResult({ source: 'ai', provider: plan.provider, instruction, notes: plan.explanation ? [plan.explanation] : [], changes: r?.changes ?? [], unmatched: [], rejected: r?.rejected.length ?? 0 });
+      setResult({ source: 'ai', provider: plan.provider, instruction, notes: plan.explanation ? [plan.explanation] : [], commands: 0, changes: r?.changes ?? [], unmatched: [], rejected: r?.rejected.length ?? 0 });
     } catch (e) {
-      setResult({ source: 'ai', instruction, notes: [], changes: [], unmatched: [], rejected: 0, error: e instanceof ApiError || e instanceof Error ? e.message : 'Error desconocido' });
+      setResult({ source: 'ai', instruction, notes: [], commands: 0, changes: [], unmatched: [], rejected: 0, error: e instanceof ApiError || e instanceof Error ? e.message : 'Error desconocido' });
     }
   };
 
@@ -107,7 +111,7 @@ export function PromptBar() {
           <Icon name="info" /> ¿Qué entiende?
         </button>
         <div className="chips" style={{ flex: 1 }}>
-          {EXAMPLES.slice(0, 4).map((ex) => (
+          {EXAMPLES.slice(0, 5).map((ex) => (
             <button key={ex} type="button" className="chip" onClick={() => submit(ex)} disabled={busy}>
               {ex}
             </button>
@@ -186,7 +190,7 @@ export function PromptBar() {
               </div>
             </div>
           )}
-          {!result.error && result.changes.length === 0 && result.unmatched.length === 0 && <div className="hint">La escena ya cumplía esa instrucción; no hubo cambios.</div>}
+          {!result.error && result.changes.length === 0 && result.unmatched.length === 0 && result.commands === 0 && <div className="hint">La escena ya cumplía esa instrucción; no hubo cambios.</div>}
           {result.rejected > 0 && <div className="hint">{result.rejected} operación(es) rechazada(s) por no cumplir el esquema.</div>}
         </div>
       )}

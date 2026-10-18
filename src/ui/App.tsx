@@ -12,6 +12,8 @@ import { SoundLabPanel } from './panels/SoundLabPanel';
 import { StoryPanel, StoryTimeline } from './panels/StoryPanel';
 import { StudioPanel } from './panels/StudioPanel';
 import { PromptBar } from './PromptBar';
+import { HelpDialog, Welcome } from './Overlays';
+import { soundscape } from '../audio/soundscape';
 import { Stage } from './Stage';
 
 const MODES: { id: Mode; label: string; icon: IconName }[] = [
@@ -156,6 +158,36 @@ export function App() {
     [],
   );
 
+  // Sonido ambiente: el navegador exige un gesto del usuario para empezar a sonar.
+  useEffect(() => {
+    const unsub = useProjectStore.subscribe(
+      (s) => s.project?.audio.settings,
+      (settings) => {
+        if (!settings) return;
+        soundscape.setVolume(settings.ambienceVolume);
+        if (!settings.ambienceEnabled && soundscape.isPlaying) soundscape.stop();
+      },
+      { fireImmediately: true },
+    );
+    const onGesture = () => {
+      const s = useProjectStore.getState().project?.audio.settings;
+      if (s?.ambienceEnabled && !soundscape.isPlaying && !new URLSearchParams(location.search).has('debug')) {
+        try {
+          soundscape.start();
+        } catch {
+          /* sin Web Audio: la app sigue funcionando en silencio */
+        }
+      }
+    };
+    window.addEventListener('pointerdown', onGesture, { once: true });
+    window.addEventListener('keydown', onGesture, { once: true });
+    return () => {
+      unsub();
+      window.removeEventListener('pointerdown', onGesture);
+      window.removeEventListener('keydown', onGesture);
+    };
+  }, []);
+
   // Al cambiar de proyecto se detiene el audio y la secuencia del anterior.
   useEffect(() => {
     storyPlayer.stop();
@@ -201,6 +233,8 @@ export function App() {
         </aside>
       </div>
       <Toasts />
+      <HelpDialog />
+      <Welcome />
     </div>
   );
 }
